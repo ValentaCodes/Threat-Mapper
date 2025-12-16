@@ -1,0 +1,1 @@
+rootProject.name = "threat-mapper-v1"
