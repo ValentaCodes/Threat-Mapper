@@ -1,6 +1,6 @@
 # Threat Mapper CLI
 
-A Java CLI that scans websites and generates a human-readable Markdown report on security issues: HTTP headers, CSP directives, and common web risks. Built for learning and practical use—clean, transparent, and focused on empowering creators and builders.
+A Java CLI that scans websites and generates a human-readable Markdown report on security issues: HTTP headers, CSP directives, and common web risks. Built for learning and practical use; clean, transparent, and focused on empowering creators and builders.
 
 ## Features
 - **Header Analysis:** Detects presence, configuration, and gaps for core security headers (CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy).
@@ -48,7 +48,7 @@ A Java CLI that scans websites and generates a human-readable Markdown report on
   - CSPParser: tokenizes directives and evaluates risks.
   - Analyzer: runs checks and produces findings.
   - Reporter: renders Markdown with a friendly tone and clear actions.
-- Tech stack: Java 11+, Gradle (Kotlin DSL), JUnit, jsoup (for HTML parsing where needed).
+- Tech stack: Java 11+, Gradle, JUnit, jsoup (for HTML parsing where needed).
 
 ## Development
 - Build: `./gradlew build`
@@ -68,12 +68,11 @@ Use a monotonic clock for elapsed durations:
 - Rulesets tailored for common platforms.
 
 ## Ethics & Purpose
-This tool aims to educate and elevate—not exploit. Reports emphasize practical fixes and sharing knowledge, especially for independent creators and small teams.
+This tool aims to educate and elevate, not exploit. Reports emphasize practical fixes and sharing knowledge, especially for independent creators and small teams.
 
 ## Contribution
-- Fork and open a PR with clear description.
-- Add tests for new analyzers.
-- Keep reports concise and actionable.
+Reach out! 
+valentacodes@gmail.com
 
 ## License
 MIT
