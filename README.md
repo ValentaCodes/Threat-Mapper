@@ -1,5 +1,7 @@
 # Threat Mapper CLI
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Java CLI that scans websites and generates a human-readable Markdown report on security issues: HTTP headers, CSP directives, and common web risks. Built for learning and practical use; clean, transparent, and focused on empowering creators and builders.
 
 ## Features
