@@ -1,8 +1,3 @@
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.StreamParser;
-
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -32,12 +27,14 @@ public class Fetcher {
 
     public Fetcher() {
         headerMap = new HashMap<>(6);
-        headerMap.put("Content-Security-Policy", null);
-        headerMap.put("Strict-Transport-Security", null);
-        headerMap.put("X-Frame-Options", null);
-        headerMap.put("X-Content-Type-Options", null);
-        headerMap.put("Referrer-Policy", null);
-        headerMap.put("Permissions-Policy", null);
+        headerMap.put(":status", null);
+        headerMap.put("content-security-policy", null);
+        headerMap.put("strict-transport-security", null);
+        headerMap.put("x-frame-options", null);
+        headerMap.put("x-content-type-options", null);
+        headerMap.put("referrer-policy", null);
+        headerMap.put("permissions-policy", null);
+        headerMap.put("x-xss-protection", null);
     }
 
     /**
@@ -49,32 +46,42 @@ public class Fetcher {
     private void processHeaders(HttpHeaders responseHeaders) {
         boolean challenge = hasChallenge(responseHeaders.map());
         if (challenge) System.out.println("Challenge Detected. Implement Selenium to bypass.");
+        boolean stillNull = false;
 
-        responseHeaders.map().forEach((keys, values) -> {
-            if (headerMap.containsKey(keys)) {
-                headerMap.replace(keys, null, values);
+        responseHeaders.map().forEach((key, value) -> {
+            if (headerMap.containsKey(key)) {
+                headerMap.replace(key, null, value);
             }
+            if (headerMap.containsValue(null)) {
+                System.out.println(key + " missing ");
+            }
+
+
         });
+
+//        if (headerMap.containsValue(null)) {
+//            System.out.println("found null");
+//        }
     }
 
-    private void parseHTML(HttpResponse<String> response) throws IOException {
-        String html = response.body();
-        Document doc = Jsoup.parse(html);
-
-        //TODO: What elements do we need to check?
-
-        try (StreamParser stream = Jsoup.connect(response.uri().toURL().toString()).execute().streamParser()) {
-        Element element;
-
-        while ((element = stream.selectNext("")) != null) {
-            // Will include children of query
-            System.out.println();
-            element.remove(); // Clean up and keep memory usage low
-        }
-        } catch (IOException e) {
-            throw new IOException();
-        }
-    }
+//    private void parseHTML(HttpResponse<String> response) throws IOException {
+//        String html = response.body();
+//        Document doc = Jsoup.parse(html);
+//
+//        //TODO: What elements do we need to check?
+//
+//        try (StreamParser stream = Jsoup.connect(response.uri().toURL().toString()).execute().streamParser()) {
+//        Element element;
+//
+//        while ((element = stream.selectNext("")) != null) {
+//            // Will include children of query
+//            System.out.println();
+//            element.remove(); // Clean up and keep memory usage low
+//        }
+//        } catch (IOException e) {
+//            throw new IOException();
+//        }
+//    }
 
     /**
      * Detects if a cloudflare bot mitigation has been enabled
@@ -100,7 +107,7 @@ public class Fetcher {
         HttpClient client = createClient();
         HttpResponse<String> response = createRequest(client, proto, website);
         processHeaders(response.headers());
-        parseHTML(response);
+//        parseHTML(response);
     }
 
     /**
@@ -177,7 +184,6 @@ public class Fetcher {
             System.out.println("Status Code: " + response.statusCode());
             System.out.println("Elapsed Time (seconds): " + elapsedTimeSec);
             System.out.println("Redirects: " + redirects);
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
