@@ -13,7 +13,7 @@ public class Fetcher {
     private static final Set<String> tldSet = Set.of("com", "org", "net", "edu", "gov", "io", "app", "dev", "ai", "xyz",
             "us", "uk", "co", "me", "tv", "info", "biz");
     private final HashMap<String, List<String>> headerMap;
-//    private static final String TLD_RESOURCE_PATH = "/tlds.txt";
+    private int redirects = 0;
 
     public Fetcher() {
         headerMap = new HashMap<>(7);
