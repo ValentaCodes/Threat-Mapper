@@ -1,3 +1,9 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.StreamParser;
+
+import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.URI;
@@ -11,9 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-
 /**
- * A Fetcher program that will create an http request gathering information on a websites security headers.
+ * A Fetcher program that will create an http request gathering information on a website security headers.
  *
  * @author Cornelius Davis
  * @version 0.0.1
@@ -39,17 +44,36 @@ public class Fetcher {
      * Process headers and check the presence for core security headers like CSP, STS, X-Frame-Options,
      * X-Content-Type-Options, Referrer-Policy
      *
-     * @param headers from webpage
+     * @param responseHeaders from webpage
      */
-    private void processHeaders(HttpHeaders headers) {
-        boolean challenge = hasChallenge(headers.map());
+    private void processHeaders(HttpHeaders responseHeaders) {
+        boolean challenge = hasChallenge(responseHeaders.map());
         if (challenge) System.out.println("Challenge Detected. Implement Selenium to bypass.");
 
-        headers.map().forEach((keys, values) -> {
+        responseHeaders.map().forEach((keys, values) -> {
             if (headerMap.containsKey(keys)) {
                 headerMap.replace(keys, null, values);
             }
         });
+    }
+
+    private void parseHTML(HttpResponse<String> response) throws IOException {
+        String html = response.body();
+        Document doc = Jsoup.parse(html);
+
+        //TODO: What elements do we need to check?
+
+        try (StreamParser stream = Jsoup.connect(response.uri().toURL().toString()).execute().streamParser()) {
+        Element element;
+
+        while ((element = stream.selectNext("")) != null) {
+            // Will include children of query
+            System.out.println();
+            element.remove(); // Clean up and keep memory usage low
+        }
+        } catch (IOException e) {
+            throw new IOException();
+        }
     }
 
     /**
@@ -66,7 +90,7 @@ public class Fetcher {
     /**
      * Runs the program
      */
-    protected void run() {
+    protected void run() throws IOException {
         String proto = displayProtocolOptions();
 
         System.out.print("Enter a website: ");
@@ -76,6 +100,7 @@ public class Fetcher {
         HttpClient client = createClient();
         HttpResponse<String> response = createRequest(client, proto, website);
         processHeaders(response.headers());
+        parseHTML(response);
     }
 
     /**
@@ -102,26 +127,27 @@ public class Fetcher {
 
         String input = getUserInput();
         int selection;
+
         try {
             selection = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             throw new NumberFormatException();
         }
 
-        String protocol;
+        String protocol = "";
         switch (selection) {
             case 1 -> protocol = "http";
             case 2 -> protocol = "https";
-            default -> protocol = "https";
         }
         return protocol;
     }
 
     /**
      * Creates and sends an HttpResponse to a target site
-     * @param client the client that is making the request
+     *
+     * @param client   the client that is making the request
      * @param protocol the desired protocol to test (http, https)
-     * @param url the target site
+     * @param url      the target site
      * @return response returned from target site
      */
     private HttpResponse<String> createRequest(HttpClient client, String protocol, String url) {
@@ -134,6 +160,7 @@ public class Fetcher {
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120" +
                             ".0.0.0 Safari/537.36").header("Content-Type", "text/html").header("Accept-Language", "en" +
                     "-US").timeout(Duration.ofSeconds(20)).build();
+
             long start = System.nanoTime();
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             long end = System.nanoTime();
@@ -145,10 +172,12 @@ public class Fetcher {
                 redirects++;
 
             }
+
             System.out.println("Resolved URL: " + response.uri().toURL());
             System.out.println("Status Code: " + response.statusCode());
             System.out.println("Elapsed Time (seconds): " + elapsedTimeSec);
             System.out.println("Redirects: " + redirects);
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -157,6 +186,7 @@ public class Fetcher {
 
     /**
      * Creates the client making the request
+     *
      * @return an HttpClient instance
      * @implSpec Sets headers to shyly mimic a user
      */
