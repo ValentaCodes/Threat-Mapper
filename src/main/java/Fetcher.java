@@ -1,33 +1,22 @@
-import java.io.IOException;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * A Fetcher program that will create an http request gathering information on a website security headers.
  *
  * @author Cornelius Davis
  * @version 0.0.1
- * @implSpec Checks core security headers: CSP, STS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and
- * Permissions Policy.
+ * @implSpec Checks core security headers: CSP, STS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
+ * Permissions Policy, and X-Xss-Protection.
  * @since 12/13/2025
  */
 public class Fetcher {
     private final HashMap<String, List<String>> headerMap;
-    private int redirects = 0;
+    private static final Set<String> tldSet = Set.of("com","org","net","edu","gov","io","app","dev","ai","xyz",
+            "us","uk","co","me","tv","info","biz");
+//    private static final String TLD_RESOURCE_PATH = "/tlds.txt";
 
     public Fetcher() {
-        headerMap = new HashMap<>(6);
-        headerMap.put(":status", null);
+        headerMap = new HashMap<>(7);
         headerMap.put("content-security-policy", null);
         headerMap.put("strict-transport-security", null);
         headerMap.put("x-frame-options", null);
@@ -37,32 +26,6 @@ public class Fetcher {
         headerMap.put("x-xss-protection", null);
     }
 
-    /**
-     * Process headers and check the presence for core security headers like CSP, STS, X-Frame-Options,
-     * X-Content-Type-Options, Referrer-Policy
-     *
-     * @param responseHeaders from webpage
-     */
-    private void processHeaders(HttpHeaders responseHeaders) {
-        boolean challenge = hasChallenge(responseHeaders.map());
-        if (challenge) System.out.println("Challenge Detected. Implement Selenium to bypass.");
-        boolean stillNull = false;
-
-        responseHeaders.map().forEach((key, value) -> {
-            if (headerMap.containsKey(key)) {
-                headerMap.replace(key, null, value);
-            }
-            if (headerMap.containsValue(null)) {
-                System.out.println(key + " missing ");
-            }
-
-
-        });
-
-//        if (headerMap.containsValue(null)) {
-//            System.out.println("found null");
-//        }
-    }
 
 //    private void parseHTML(HttpResponse<String> response) throws IOException {
 //        String html = response.body();
@@ -83,31 +46,70 @@ public class Fetcher {
 //        }
 //    }
 
-    /**
-     * Detects if a cloudflare bot mitigation has been enabled
-     * TODO: Detect challenges of all kinds
-     *
-     * @param headers response headers
-     * @return true if 'cf-mitigated' was detected
-     */
-    private boolean hasChallenge(Map<String, List<String>> headers) {
-        return headers.get("cf-mitigated") != null;
-    }
+//    /**
+//     * Detects if a cloudflare bot mitigation has been enabled
+//     * TODO: Detect challenges of all kinds
+//     *
+//     * @param headers response headers
+//     * @return true if 'cf-mitigated' was detected
+//     */
+//    private boolean hasChallenge(Map<String, List<String>> headers) {
+//        return headers.get("cf-mitigated") != null;
+//    }
 
     /**
      * Runs the program
      */
-    protected void run() throws IOException {
-        String proto = displayProtocolOptions();
+    protected void run() {
+        int input = 0;
+        String protocol;
+
+        do {
+            displayStartMenu();
+            String rawInput = getUserInput();
+            try {
+                input = Integer.parseInt(rawInput);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid selection");
+                continue;
+            }
+            if (input < 1 || input > 3) {
+                System.out.println("Invalid selection");
+                continue;
+            }
+            switch (input) {
+                case 1 -> {
+                    protocol = "http";
+                }
+                case 2 -> {
+                    protocol = "https";
+                }
+                case 3 -> {
+//                    TODO: end infinity loop.
+                }
+            }
+        } while (input != 3);
+
+        String web = "";
+
+        do {
+        web = getWebsite();
+
+        } while (!tldSet.contains(web));
+
+        Request requestResponse = new Request(protocol, web, headerMap);
+        requestResponse.print();
+    }
+
+    private String getWebsite(){
 
         System.out.print("Enter a website: ");
+        System.out.printf("""
+                Example: google.com or tryhackme.com
+                Available domains: %s
+                """, tldSet.toArray());
 
-        String website = getUserInput();
-
-        HttpClient client = createClient();
-        HttpResponse<String> response = createRequest(client, proto, website);
-        processHeaders(response.headers());
-//        parseHTML(response);
+        return getUserInput().trim();
     }
 
     /**
@@ -121,85 +123,16 @@ public class Fetcher {
     }
 
     /**
-     * Display protocol options for the user to select from
+     * Display the start menu
      *
-     * @return the preferred protocol
      */
-    private String displayProtocolOptions() {
+    private void displayStartMenu() {
         System.out.println("""
+                ===Threat Mapper v0.0.1===
                 Choose a protocol:
                 1. http
                 2. https
+                3. EXIT PROGRAM
                 """);
-
-        String input = getUserInput();
-        int selection;
-
-        try {
-            selection = Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            throw new NumberFormatException();
-        }
-
-        String protocol = "";
-        switch (selection) {
-            case 1 -> protocol = "http";
-            case 2 -> protocol = "https";
-        }
-        return protocol;
-    }
-
-    /**
-     * Creates and sends an HttpResponse to a target site
-     *
-     * @param client   the client that is making the request
-     * @param protocol the desired protocol to test (http, https)
-     * @param url      the target site
-     * @return response returned from target site
-     */
-    private HttpResponse<String> createRequest(HttpClient client, String protocol, String url) {
-        HttpResponse<String> response;
-        StringBuilder sb = new StringBuilder(protocol);
-        sb.append("://").append(url);
-
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(sb.toString())).header("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120" +
-                            ".0.0.0 Safari/537.36").header("Content-Type", "text/html").header("Accept-Language", "en" +
-                    "-US").timeout(Duration.ofSeconds(20)).build();
-
-            long start = System.nanoTime();
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            long end = System.nanoTime();
-
-            long elapsedTimeNs = end - start;
-            double elapsedTimeSec = elapsedTimeNs / 1000000000.00;
-
-            if (response.previousResponse().get().statusCode() != 200) {
-                redirects++;
-
-            }
-
-            System.out.println("Resolved URL: " + response.uri().toURL());
-            System.out.println("Status Code: " + response.statusCode());
-            System.out.println("Elapsed Time (seconds): " + elapsedTimeSec);
-            System.out.println("Redirects: " + redirects);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return response;
-    }
-
-    /**
-     * Creates the client making the request
-     *
-     * @return an HttpClient instance
-     * @implSpec Sets headers to shyly mimic a user
-     */
-    private HttpClient createClient() {
-        //Store session cookies when we make request
-        CookieManager cookieManager = new CookieManager();
-        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-        return HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).cookieHandler(cookieManager).connectTimeout(Duration.ofSeconds(10)).version(HttpClient.Version.HTTP_2).build();
     }
 }
