@@ -1,0 +1,14 @@
+.com
+.org
+.net
+.edu
+.gov
+.io
+.app
+.dev
+.ai
+.xyz
+.uk
+.co
+.us
+.mil
