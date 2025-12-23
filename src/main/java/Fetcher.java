@@ -27,12 +27,11 @@ public class Fetcher {
         headerMap.put("x-xss-protection", null);
     }
 
-
 //    private void parseHTML(HttpResponse<String> response) throws IOException {
 //        String html = response.body();
 //        Document doc = Jsoup.parse(html);
 //
-//        //TODO: What elements do we need to check?
+//        // TODO: What elements do we need to check?
 //
 //        try (StreamParser stream = Jsoup.connect(response.uri().toURL().toString()).execute().streamParser()) {
 //        Element element;
@@ -56,7 +55,6 @@ public class Fetcher {
         String targetWebsite = getWebsite(protocol);
         Request request = new Request(protocol, targetWebsite, headerMap);
         request.print();
-        System.out.println(Arrays.toString(request.redirectionStack.getRedirects()));
     }
 
 
