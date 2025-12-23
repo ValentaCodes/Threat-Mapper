@@ -14,6 +14,7 @@ public class Fetcher {
             "us", "uk", "co", "me", "tv", "info", "biz");
     private final HashMap<String, List<String>> headerMap;
     private int redirects = 0;
+//    private static final String TLD_RESOURCE_PATH = "/tlds.txt";
 
     public Fetcher() {
         headerMap = new HashMap<>(7);
