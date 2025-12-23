@@ -13,7 +13,6 @@ public class Fetcher {
     private static final Set<String> tldSet = Set.of("com", "org", "net", "edu", "gov", "io", "app", "dev", "ai", "xyz",
             "us", "uk", "co", "me", "tv", "info", "biz");
     private final HashMap<String, List<String>> headerMap;
-    private int redirects = 0;
 //    private static final String TLD_RESOURCE_PATH = "/tlds.txt";
 
     public Fetcher() {
@@ -27,12 +26,11 @@ public class Fetcher {
         headerMap.put("x-xss-protection", null);
     }
 
-
 //    private void parseHTML(HttpResponse<String> response) throws IOException {
 //        String html = response.body();
 //        Document doc = Jsoup.parse(html);
 //
-//        //TODO: What elements do we need to check?
+//        // TODO: What elements do we need to check?
 //
 //        try (StreamParser stream = Jsoup.connect(response.uri().toURL().toString()).execute().streamParser()) {
 //        Element element;
@@ -56,7 +54,6 @@ public class Fetcher {
         String targetWebsite = getWebsite(protocol);
         Request request = new Request(protocol, targetWebsite, headerMap);
         request.print();
-        System.out.println(Arrays.toString(request.redirectionStack.getRedirects()));
     }
 
 

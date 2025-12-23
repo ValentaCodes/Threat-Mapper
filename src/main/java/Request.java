@@ -18,7 +18,6 @@ public class Request {
 
     public Request(String protocol, String url, HashMap<String, List<String>> map) {
         this.map = map;
-
         HttpClient client = createClient();
         HttpRequest request = createRequest(protocol, url);
         response = getResponse(request, client);
@@ -53,10 +52,9 @@ public class Request {
 
         try {
             //Create the request
-            request = HttpRequest.newBuilder().uri(URI.create(sb.toString())).header("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120" +
-                            ".0.0.0 Safari/537.36").header("Content-Type", "text/html").header("Accept-Language", "en" +
-                    "-US").timeout(Duration.ofSeconds(20)).build();
+            request = HttpRequest.newBuilder().uri(URI.create(sb.toString())).header("User-Agent", "Mozilla/5.0 " +
+                    "(Windows NT 10.0; Win64; x64) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120" + ".0.0.0 " +
+                    "Safari/537.36").header("Content-Type", "text/html").header("Accept-Language", "en" + "-US").timeout(Duration.ofSeconds(20)).build();
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -123,29 +121,29 @@ public class Request {
         map.replaceAll((key, value) -> value == null ? MISSING : value);
     }
 
+    /**
+     * Prints response information
+     */
     protected void print() {
 
         try {
-
             System.out.printf("""
-                            Status Code: %s
-                            Resolved URL: %s
-                            Elapsed Time: %s
-                            # of Redirects: %d
-                            """,
-                    response.statusCode(),
-                    response.uri().toURL(),
-                    elapsedTimeSeconds,
+                    Status Code: %s
+                    Resolved URL: %s
+                    Elapsed Time: %s
+                    # of Redirects: %d
+                    """, response.statusCode(), response.uri().toURL(), elapsedTimeSeconds,
                     redirectionStack.getRedirectCount());
+
         } catch (MalformedURLException e) {
             throw new RuntimeException();
         }
 
         map.forEach((k, v) -> {
             if (v.equals(MISSING)) {
-                System.out.println(k + ": " + v);
+                System.out.println(k + ": " + v.get(0));
             } else {
-                System.out.println(k + ": ");
+                System.out.println(k + ": PRESENT");
                 System.out.println(v);
             }
         });
