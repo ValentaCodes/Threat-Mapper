@@ -10,9 +10,9 @@ import java.util.*;
  * @since 12/13/2025
  */
 public class Fetcher {
+    private static final Set<String> tldSet = Set.of("com", "org", "net", "edu", "gov", "io", "app", "dev", "ai", "xyz",
+            "us", "uk", "co", "me", "tv", "info", "biz");
     private final HashMap<String, List<String>> headerMap;
-    private static final Set<String> tldSet = Set.of("com","org","net","edu","gov","io","app","dev","ai","xyz",
-            "us","uk","co","me","tv","info","biz");
 //    private static final String TLD_RESOURCE_PATH = "/tlds.txt";
 
     public Fetcher() {
@@ -46,70 +46,34 @@ public class Fetcher {
 //        }
 //    }
 
-//    /**
-//     * Detects if a cloudflare bot mitigation has been enabled
-//     * TODO: Detect challenges of all kinds
-//     *
-//     * @param headers response headers
-//     * @return true if 'cf-mitigated' was detected
-//     */
-//    private boolean hasChallenge(Map<String, List<String>> headers) {
-//        return headers.get("cf-mitigated") != null;
-//    }
-
     /**
      * Runs the program
      */
     protected void run() {
-        int input = 0;
-        String protocol;
 
-        do {
-            displayStartMenu();
-            String rawInput = getUserInput();
-            try {
-                input = Integer.parseInt(rawInput);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid selection");
-                continue;
-            }
-            if (input < 1 || input > 3) {
-                System.out.println("Invalid selection");
-                continue;
-            }
-            switch (input) {
-                case 1 -> {
-                    protocol = "http";
-                }
-                case 2 -> {
-                    protocol = "https";
-                }
-                case 3 -> {
-//                    TODO: end infinity loop.
-                }
-            }
-        } while (input != 3);
-
-        String web = "";
-
-        do {
-        web = getWebsite();
-
-        } while (!tldSet.contains(web));
-
-        Request requestResponse = new Request(protocol, web, headerMap);
-        requestResponse.print();
+        String protocol = getProtocol();
+        String targetWebsite = getWebsite(protocol);
+        Request request = new Request(protocol, targetWebsite, headerMap);
+        request.print();
+        System.out.println(Arrays.toString(request.redirectionStack.getRedirects()));
     }
 
-    private String getWebsite(){
 
+    private String getWebsite(String proto) {
+        System.out.println("Current url: www." + proto + "://");
         System.out.print("Enter a website: ");
-        System.out.printf("""
-                Example: google.com or tryhackme.com
-                Available domains: %s
-                """, tldSet.toArray());
+        System.out.println("Available domains: " + Arrays.toString(tldSet.toArray()));
 
-        return getUserInput().trim();
+        String input = getUserInput().trim();
+        String domain = input.substring(input.length() - 3);
+
+
+        if (!tldSet.contains(domain)) {
+            System.out.println("Invalid domain");
+            getWebsite(proto);
+        }
+
+        return input;
     }
 
     /**
@@ -123,10 +87,52 @@ public class Fetcher {
     }
 
     /**
-     * Display the start menu
+     * Get the desired protocol option or end program
      *
+     * @return string
      */
-    private void displayStartMenu() {
+    private String getProtocol() {
+
+        int input = 0;
+
+        do {
+            displayProtocolMenu();
+            String rawInput = getUserInput();
+
+            try {
+                input = Integer.parseInt(rawInput);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid selection");
+                continue;
+            }
+
+            if (input < 1 || input > 3) {
+                System.out.println("Invalid selection");
+                continue;
+            }
+
+            switch (input) {
+                case 1 -> {
+                    return "http";
+                }
+                case 2 -> {
+                    return "https";
+                }
+                case 3 -> {
+                    System.out.println("Terminating program");
+                    System.exit(0);
+                }
+            }
+        } while (input != 3);
+
+        return "";
+    }
+
+
+    /**
+     * Display the start menu
+     */
+    private void displayProtocolMenu() {
         System.out.println("""
                 ===Threat Mapper v0.0.1===
                 Choose a protocol:

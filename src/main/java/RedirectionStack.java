@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Stack;
 
 /**
@@ -6,20 +5,17 @@ import java.util.Stack;
  */
 public class RedirectionStack<Optional> extends Stack<Optional> {
     private static int redirectCount;
-    private ArrayList<String> backingArr = new ArrayList<>();
-    private Optional previousResponse;
-    public RedirectionStack(){
 
-    }
+    public RedirectionStack() {
 
-    public RedirectionStack(Optional previousResponse) {
-        this.previousResponse = previousResponse;
-        redirectCount++;
-        backingArr.add(previousResponse.toString());
     }
 
     protected int getRedirectCount() {
-        return redirectCount;
+        return this.elementCount;
+    }
+
+    protected Object[] getRedirects() {
+        return this.elementData;
     }
 
 }

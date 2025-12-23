@@ -14,39 +14,67 @@ public class Request {
     private static HttpResponse<String> response;
     private static double elapsedTimeSeconds;
     RedirectionStack<Optional<HttpResponse<String>>> redirectionStack = new RedirectionStack<>();
-    private HttpClient client;
     private HashMap<String, List<String>> map;
 
     public Request(String protocol, String url, HashMap<String, List<String>> map) {
         this.map = map;
 
         HttpClient client = createClient();
-        response = createRequest(client, protocol, url);
+        HttpRequest request = createRequest(protocol, url);
+        response = getResponse(request, client);
         processHeaders(response.headers(), map);
+    }
+
+    /**
+     * Creates the client making the request
+     *
+     * @return an HttpClient instance
+     * @implSpec Sets headers to shyly mimic a user
+     */
+    private HttpClient createClient() {
+        //Store session cookies when we make request
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+        return HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).cookieHandler(cookieManager).connectTimeout(Duration.ofSeconds(10)).version(HttpClient.Version.HTTP_2).build();
     }
 
     /**
      * Creates and sends an HttpResponse to a target site
      *
-     * @param client   the client that is making the request
      * @param protocol the desired protocol to test (http, https)
      * @param url      the target site
      * @return response returned from target site
      */
-    private HttpResponse<String> createRequest(HttpClient client, String protocol, String url) {
-        HttpResponse<String> response;
+    private HttpRequest createRequest(String protocol, String url) {
+        HttpRequest request;
 
         StringBuilder sb = new StringBuilder(protocol);
         sb.append("://").append(url);
 
         try {
             //Create the request
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(sb.toString())).header("User-Agent",
+            request = HttpRequest.newBuilder().uri(URI.create(sb.toString())).header("User-Agent",
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120" +
                             ".0.0.0 Safari/537.36").header("Content-Type", "text/html").header("Accept-Language", "en" +
                     "-US").timeout(Duration.ofSeconds(20)).build();
 
-            // Send out req and track response time
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return request;
+    }
+
+    /**
+     * Sends a client request
+     *
+     * @param request Http request
+     * @param client  Http client
+     * @return a response
+     */
+    private HttpResponse<String> getResponse(HttpRequest request, HttpClient client) {
+        HttpResponse<String> response;
+        try {
+            // Client sends req and receives response. Track response time
             long start = System.nanoTime();
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             long end = System.nanoTime();
@@ -65,16 +93,14 @@ public class Request {
     }
 
     /**
-     * Creates the client making the request
+     * Detects if a cloudflare bot mitigation has been enabled
+     * TODO: Detect challenges of all kinds
      *
-     * @return an HttpClient instance
-     * @implSpec Sets headers to shyly mimic a user
+     * @param headers response headers
+     * @return true if 'cf-mitigated' was detected
      */
-    private HttpClient createClient() {
-        //Store session cookies when we make request
-        CookieManager cookieManager = new CookieManager();
-        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-        return HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).cookieHandler(cookieManager).connectTimeout(Duration.ofSeconds(10)).version(HttpClient.Version.HTTP_2).build();
+    private boolean hasChallenge(Map<String, List<String>> headers) {
+        return headers.get("cf-mitigated") != null;
     }
 
     /**
@@ -84,8 +110,8 @@ public class Request {
      * @param responseHeaders from webpage
      */
     private void processHeaders(HttpHeaders responseHeaders, HashMap<String, List<String>> map) {
-//        boolean challenge = hasChallenge(responseHeaders.map());
-//        if (challenge) System.out.println("Challenge Detected. Implement Selenium to bypass.");
+        boolean challenge = hasChallenge(responseHeaders.map());
+        if (challenge) System.out.println("Challenge Detected. Implement Selenium to bypass.");
 
         // Scan incoming response and only take the header values we need for our 6 core security headers
         responseHeaders.map().forEach((key, valueArray) -> {
@@ -93,6 +119,7 @@ public class Request {
                 map.put(key, new ArrayList<>(valueArray));
             }
         });
+
         map.replaceAll((key, value) -> value == null ? MISSING : value);
     }
 
@@ -118,7 +145,7 @@ public class Request {
             if (v.equals(MISSING)) {
                 System.out.println(k + ": " + v);
             } else {
-                System.out.println(k + ": " + "PRESENT");
+                System.out.println(k + ": ");
                 System.out.println(v);
             }
         });
